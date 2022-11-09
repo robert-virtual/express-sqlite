@@ -1,4 +1,5 @@
 import { Database } from "sqlite3";
+import { log } from "util";
 import { validObj } from "../../../libs/validObj";
 import { IDaoBase } from "../../IDaoBase";
 
@@ -10,8 +11,6 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
     this.tableName = tableName;
   }
   createOne(data: Partial<T>): Promise<number> {
-    console.log({data});
-    
     if (!validObj(data)) {
       throw new Error("Empty data");
     }
@@ -45,7 +44,10 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
       const keys: (keyof T)[] = Object.keys(filter) as (keyof T)[];
       const params = keys.map((e) => `${String(e)} = '${filter[e]}'`);
       where = `where ${params.join(" or ")}`;
+      
     }
+    console.log({where});
+    
 
     const res = new Promise<T[]>((res, rej) => {
       this.db.all(
@@ -64,13 +66,14 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
     let where: string | null = null;
     if (filter && validObj(filter)) {
       const keys: (keyof T)[] = Object.keys(filter) as (keyof T)[];
-      const params = keys.map((e) => `${String(e)} = '${filter[e]}'`);
+      const params = keys.map((e) => `${String(e)} = ?`);
       where = `where ${params.join(" or ")}`;
     }
 
     const res = new Promise<T>((res, rej) => {
       this.db.get(
         `select * from ${this.tableName} ${where ?? ""}`,
+        Object.values(filter),
         (err, rows) => {
           if (err) {
             rej(err);
@@ -81,8 +84,34 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
     });
     return res;
   }
-  updateOne(filter: Partial<T>): Promise<unknown> {
-    throw new Error("Method not implemented.");
+  updateOne(filter: Partial<T>, data: Partial<T>): Promise<unknown> {
+    if (!validObj(data)) {
+      throw new Error("Empty data");
+    }
+    let where: string | null = null;
+    if (filter && validObj(filter)) {
+      const keys: (keyof T)[] = Object.keys(filter) as (keyof T)[];
+      const params = keys.map((e) => `${String(e)} = '${filter[e]}'`);
+      where = `where ${params.join(" or ")}`;
+    }
+    const date = new Date().toISOString();
+    data = { createdAt: date, updatedAt: date, ...data };
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    return new Promise((res, rej) => {
+      this.db.run(
+        `UPDATE ${this.tableName} set ${keys.map(e=>`${e} = ?`).join()}
+         ${where ?? ""}
+      `,
+        values,
+        function (err) {
+          if (err) {
+            rej(err);
+          }
+          res(this.lastID);
+        }
+      );
+    });
   }
   updateMany(filter: Partial<T>): Promise<unknown> {
     throw new Error("Method not implemented.");

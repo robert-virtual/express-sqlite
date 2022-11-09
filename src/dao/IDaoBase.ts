@@ -8,7 +8,7 @@ export interface IDaoBase<T> {
   createMany(data: Partial<T>[]): Promise<unknown>;
   findMany(filter?: Partial<T>): Promise<T[]>;
   findOne(filter: Partial<T>): Promise<T>;
-  updateOne(filter: Partial<T>): Promise<unknown>;
+  updateOne(filter: Partial<T>,data:Partial<T>): Promise<unknown>;
   updateMany(filter: Partial<T>): Promise<unknown>;
   deleteOne(filter: Partial<T>): Promise<unknown>;
   deleteMany(filter: Partial<T>): Promise<unknown>;

@@ -6,8 +6,7 @@ const router = Router();
 const products = new ProductsDao();
 
 router.get("/", async (req, res) => {
-  const { name } = req.query;
-  const data = await products.findMany({ name: String(name) });
+  const data = await products.findMany(req.query);
   res.json({ msg: "get products", data });
 });
 
@@ -31,9 +30,10 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id",async (req, res) => {
   const { id } = req.params;
-  res.json({ msg: "put product " + id });
+  const data = await products.updateOne({_id:id},req.body)
+  res.json({ msg: "put product " + id,data });
 });
 
 router.delete("/:id", (req, res) => {
