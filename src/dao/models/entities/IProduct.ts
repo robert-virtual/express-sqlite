@@ -7,5 +7,5 @@ export interface IProduct{
   stock:number
   createdAt:Date
   updatedAt:Date
-  _id:string
+  _id:number|string
 }

@@ -40,7 +40,6 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
     throw new Error("Method not implemented.");
   }
   findMany(filter?: Partial<T> | undefined): Promise<T[]> {
-    console.log({filter});
     let where: string | null = null;
     if (filter && validObj(filter)) {
       const keys: (keyof T)[] = Object.keys(filter) as (keyof T)[];
@@ -62,7 +61,25 @@ export abstract class SqliteDao<T> implements IDaoBase<T> {
     return res;
   }
   findOne(filter: Partial<T>): Promise<T> {
-    throw new Error("Method not implemented.");
+    let where: string | null = null;
+    if (filter && validObj(filter)) {
+      const keys: (keyof T)[] = Object.keys(filter) as (keyof T)[];
+      const params = keys.map((e) => `${String(e)} = '${filter[e]}'`);
+      where = `where ${params.join(" or ")}`;
+    }
+
+    const res = new Promise<T>((res, rej) => {
+      this.db.get(
+        `select * from ${this.tableName} ${where ?? ""}`,
+        (err, rows) => {
+          if (err) {
+            rej(err);
+          }
+          res(rows);
+        }
+      );
+    });
+    return res;
   }
   updateOne(filter: Partial<T>): Promise<unknown> {
     throw new Error("Method not implemented.");
